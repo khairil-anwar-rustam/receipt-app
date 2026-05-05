@@ -165,7 +165,7 @@ function generatePDF(){
     doc.text(`Purpose: ${r.purpose}`, 10, y);
     y += 5;
 
-    doc.text(`Amount: ${r.amount || '-'}`, 10, y);
+    doc.text(`Amount: RM ${r.amount || '-'}`, 10, y);
     y += 5;
 
     doc.addImage(r.imgData, 'JPEG', 10, y, 90, 60);
