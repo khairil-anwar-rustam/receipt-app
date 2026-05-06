@@ -186,12 +186,13 @@ function renderList(){
 }
 
 // generate PDF
-function generatePDF(){
+async function generatePDF(){
   const doc = new jsPDF('p','mm','a4');
 
-  receipts.forEach((r, index) => {
+  for(let i = 0; i < receipts.length; i++){
+    const r = receipts[i];
 
-    if(index !== 0){
+    if(i !== 0){
       doc.addPage();
     }
 
@@ -213,18 +214,31 @@ function generatePDF(){
     doc.text(`Amount: RM ${r.amount || '-'}`, 10, y);
     y += 8;
 
-    let imgWidth = 190;
-    let imgHeight = 120;
+    // 🔥 FIX: get REAL image size
+    const img = new Image();
+    img.src = r.imgData;
 
-    // maintain ratio
-    const ratio = 1.5;
-    imgHeight = imgWidth / ratio;
+    await new Promise(resolve => {
+      img.onload = resolve;
+    });
+
+    const pageWidth = 190; // A4 width minus margin
+    const pageHeight = 260; // safe height
+
+    let imgWidth = pageWidth;
+    let imgHeight = (img.height / img.width) * imgWidth;
+
+    // If too tall, scale down
+    if(imgHeight > pageHeight){
+      imgHeight = pageHeight;
+      imgWidth = (img.width / img.height) * imgHeight;
+    }
 
     doc.addImage(r.imgData, 'JPEG', 10, y, imgWidth, imgHeight);
-  });
+  }
 
   doc.save('receipt-report.pdf');
-}
+  }
 </script>
 </body>
     </html>
