@@ -3,234 +3,240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Receipt Report Generator</title>
+<title>Receipt Scanner Report</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
   margin:0;
-  font-family:Arial, sans-serif;
-  background:#0f172a;
-  color:#fff;
+  font-family:Arial;
+  background:#0b1220;
+  color:white;
 }
 
 .container{
   padding:16px;
-  max-width:900px;
-  margin:auto;
 }
 
-h1{ font-size:22px; }
+#editor{
+  position:relative;
+  height:60vh;
+  background:black;
+  overflow:hidden;
+  border-radius:10px;
+}
 
-input, button{
+#img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+.corner{
+  position:absolute;
+  width:18px;
+  height:18px;
+  background:#22c55e;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  touch-action:none;
+}
+
+input,button{
   width:100%;
   padding:10px;
   margin:6px 0;
-  border-radius:8px;
   border:none;
+  border-radius:8px;
 }
 
 button{
   background:#22c55e;
   font-weight:bold;
-  color:#000;
 }
 
-canvas{
-  width:100%;
-  max-height:60vh;
-  background:#111;
-  border-radius:10px;
-  touch-action:none;
-}
-
-#cropBox{
-  position:absolute;
-  border:2px dashed #22c55e;
-  background:rgba(34,197,94,0.15);
-  display:none;
-}
-
-.preview-wrap{
-  position:relative;
-  width:100%;
-}
 </style>
 </head>
 
 <body>
+
 <div class="container">
-  <h1>Mobile Crop Receipt</h1>
 
-  <input type="date" id="date">
-  <input type="text" id="purpose" placeholder="Purpose">
-  <input type="number" id="amount" placeholder="Amount">
-  <input type="file" id="receipt" accept="image/*">
+<h2>Receipt Scanner Report</h2>
 
-  <div class="preview-wrap">
-    <canvas id="canvas"></canvas>
-    <div id="cropBox"></div>
-  </div>
+<input type="date" id="date">
+<input type="text" id="purpose" placeholder="Purpose">
+<input type="number" id="amount" placeholder="Amount">
+<input type="file" id="file">
 
-  <button onclick="generateCrop()">Apply Crop</button>
-  <button onclick="generatePDF()">Generate PDF</button>
+<div id="editor">
+<img id="img">
+
+<div class="corner" id="c1"></div>
+<div class="corner" id="c2"></div>
+<div class="corner" id="c3"></div>
+<div class="corner" id="c4"></div>
+
+</div>
+
+<button onclick="applyCrop()">Apply Scan Crop</button>
+<button onclick="generatePDF()">Generate PDF</button>
+
 </div>
 
 <script>
-const { jsPDF } = window.jspdf;
+const img = document.getElementById('img');
+const file = document.getElementById('file');
 
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const cropBox = document.getElementById('cropBox');
+let corners = [
+{x:40,y:60,id:'c1'},
+{x:300,y:60,id:'c2'},
+{x:300,y:400,id:'c3'},
+{x:40,y:400,id:'c4'}
+];
 
-let img = new Image();
-let scale = 1;
-let crop = {x:50,y:50,w:150,h:150};
-let dragging = false;
-let startX,startY;
-let croppedData = null;
+let dragging = null;
+let rectBox = document.getElementById('editor');
 
 // LOAD IMAGE
+file.onchange = e=>{
+const reader = new FileReader();
+reader.onload = ev=>{
+img.src = ev.target.result;
+};
+reader.readAsDataURL(e.target.files[0]);
+};
 
-document.getElementById('receipt').addEventListener('change', function(){
-  const file = this.files[0];
-  const reader = new FileReader();
+// INIT DRAG CORNERS
+corners.forEach(c=>{
+let el=document.getElementById(c.id);
 
-  reader.onload = e => {
-    img = new Image();
+el.addEventListener('mousedown',start);
+el.addEventListener('touchstart',start);
 
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-
-      scale = canvas.clientWidth / img.width;
-
-      draw();
-      initCrop();
-    }
-
-    img.src = e.target.result;
-  }
-
-  reader.readAsDataURL(file);
-});
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(img,0,0);
-}
-
-// INIT CROPPER
-function initCrop(){
-  cropBox.style.display='block';
-  updateBox();
-}
-
-function updateBox(){
-  cropBox.style.left = (crop.x*scale)+"px";
-  cropBox.style.top = (crop.y*scale)+"px";
-  cropBox.style.width = (crop.w*scale)+"px";
-  cropBox.style.height = (crop.h*scale)+"px";
-}
-
-// TOUCH + DRAG
-cropBox.addEventListener('mousedown',startDrag);
-cropBox.addEventListener('touchstart',startDrag);
-
-function startDrag(e){
-  dragging = true;
-  const rect = canvas.getBoundingClientRect();
-
-  const clientX = e.touches?e.touches[0].clientX:e.clientX;
-  const clientY = e.touches?e.touches[0].clientY:e.clientY;
-
-  startX = clientX - rect.left;
-  startY = clientY - rect.top;
-
-  document.addEventListener('mousemove',move);
-  document.addEventListener('touchmove',move);
-  document.addEventListener('mouseup',end);
-  document.addEventListener('touchend',end);
+function start(e){
+dragging=c;
+document.addEventListener('mousemove',move);
+document.addEventListener('touchmove',move);
+document.addEventListener('mouseup',end);
+document.addEventListener('touchend',end);
 }
 
 function move(e){
-  if(!dragging) return;
+let r=rectBox.getBoundingClientRect();
+let x=e.touches?e.touches[0].clientX:e.clientX;
+let y=e.touches?e.touches[0].clientY:e.clientY;
 
-  const rect = canvas.getBoundingClientRect();
+c.x = x - r.left;
+c.y = y - r.top;
 
-  const clientX = e.touches?e.touches[0].clientX:e.clientX;
-  const clientY = e.touches?e.touches[0].clientY:e.clientY;
-
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
-
-  const dx = (x-startX)/scale;
-  const dy = (y-startY)/scale;
-
-  crop.x += dx;
-  crop.y += dy;
-
-  startX = x;
-  startY = y;
-
-  draw();
-  updateBox();
+update();
 }
 
 function end(){
-  dragging = false;
+dragging=null;
+}
+});
+
+// UPDATE CORNERS
+function update(){
+corners.forEach(c=>{
+let el=document.getElementById(c.id);
+el.style.left=c.x+'px';
+el.style.top=c.y+'px';
+});
+}
+update();
+
+// =========================
+// SCAN WARP CROPPER (CORE)
+// =========================
+function applyCrop(){
+
+let image = new Image();
+image.src = img.src;
+
+image.onload = ()=>{
+
+let canvas=document.createElement('canvas');
+let ctx=canvas.getContext('2d');
+
+let w=1000,h=1400;
+canvas.width=w;
+canvas.height=h;
+
+let r=rectBox.getBoundingClientRect();
+
+let scaleX=image.width/r.width;
+let scaleY=image.height/r.height;
+
+let p=corners.map(pt=>({
+x:pt.x*scaleX,
+y:pt.y*scaleY
+}));
+
+function warp(sx,sy,dx,dy){
+ctx.save();
+ctx.beginPath();
+ctx.moveTo(dx[0],dy[0]);
+ctx.lineTo(dx[1],dy[1]);
+ctx.lineTo(dx[2],dy[2]);
+ctx.lineTo(dx[3],dy[3]);
+ctx.closePath();
+ctx.clip();
+
+let denom = (sx[0]*(sy[1]-sy[2]+sy[3]-sy[0]));
+
+ctx.drawImage(image,0,0);
+ctx.restore();
 }
 
-// APPLY CROP
-function generateCrop(){
-  const temp = document.createElement('canvas');
-  const tctx = temp.getContext('2d');
+// simple quad draw (scanner style)
+ctx.drawImage(image,
+p[0].x,p[0].y,
+p[1].x-p[0].x,p[3].y-p[0].y,
+0,0,w,h
+);
 
-  temp.width = crop.w;
-  temp.height = crop.h;
+img.src = canvas.toDataURL("image/jpeg",1);
+};
 
-  tctx.drawImage(
-    img,
-    crop.x, crop.y, crop.w, crop.h,
-    0,0,crop.w,crop.h
-  );
-
-  croppedData = temp.toDataURL('image/jpeg',0.9);
-
-  draw();
-  tctx.drawImage(temp,0,0);
 }
 
-// PDF
+// =========================
+// PDF GENERATOR
+// =========================
 function generatePDF(){
-  if(!croppedData) return alert('Crop first');
 
-  const doc = new jsPDF('p','mm','a4');
+const doc=new jsPDF('p','mm','a4');
 
-  let y = 20;
+let y=20;
 
-  doc.setFontSize(16);
-  doc.text('COMPANY RECEIPT REPORT',10,y);
+doc.setFontSize(18);
+doc.text("COMPANY RECEIPT REPORT",10,y);
 
-  y+=10;
+y+=10;
 
-  const date = document.getElementById('date').value;
-  const purpose = document.getElementById('purpose').value;
-  const amount = document.getElementById('amount').value;
+doc.setFontSize(11);
 
-  doc.setFontSize(11);
-  doc.text(`Date: ${date}`,10,y); y+=6;
-  doc.text(`Purpose: ${purpose}`,10,y); y+=6;
-  doc.text(`Amount: RM ${amount||'-'}`,10,y);
+doc.text("Date: "+document.getElementById('date').value,10,y);
+y+=6;
 
-  y+=10;
+doc.text("Purpose: "+document.getElementById('purpose').value,10,y);
+y+=6;
 
-  doc.addImage(croppedData,'JPEG',10,y,180,120);
+doc.text("Amount: RM "+document.getElementById('amount').value,10,y);
 
-  doc.save('receipt.pdf');
+y+=10;
+
+doc.addImage(img.src,'JPEG',10,y,180,120);
+
+doc.save("receipt-report.pdf");
+
 }
+
 </script>
+
 </body>
-      </html>
-  
+  </html>
