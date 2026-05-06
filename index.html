@@ -21,12 +21,9 @@ body{
   margin:auto;
 }
 
-h1{
-  font-size:22px;
-  margin-bottom:10px;
-}
+h1{ font-size:22px; }
 
-input{
+input, button{
   width:100%;
   padding:10px;
   margin:6px 0;
@@ -35,211 +32,205 @@ input{
 }
 
 button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
   background:#22c55e;
-  color:#000;
   font-weight:bold;
-  margin-top:10px;
+  color:#000;
 }
 
-.receipt-list{
-  margin-top:15px;
-}
-
-.card{
-  background:#1e293b;
-  padding:12px;
-  border-radius:10px;
-  margin-bottom:12px;
-}
-
-.card-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:10px;
-}
-
-.card-info{
-  font-size:14px;
-}
-
-.card img{
+canvas{
   width:100%;
-  border-radius:8px;
-  margin-top:10px;
+  max-height:60vh;
+  background:#111;
+  border-radius:10px;
+  touch-action:none;
 }
 
-.delete-btn{
-  background:#ef4444;
-  color:#fff;
-  border:none;
-  border-radius:6px;
-  padding:4px 8px;
-  font-size:12px;
+#cropBox{
+  position:absolute;
+  border:2px dashed #22c55e;
+  background:rgba(34,197,94,0.15);
+  display:none;
+}
+
+.preview-wrap{
+  position:relative;
+  width:100%;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-  <h1>Receipt Report</h1>
+  <h1>Mobile Crop Receipt</h1>
 
   <input type="date" id="date">
   <input type="text" id="purpose" placeholder="Purpose">
-  <input type="number" id="amount" placeholder="Amount (RM)">
+  <input type="number" id="amount" placeholder="Amount">
   <input type="file" id="receipt" accept="image/*">
 
-  <div class="receipt-list" id="list"></div>
+  <div class="preview-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="cropBox"></div>
+  </div>
 
+  <button onclick="generateCrop()">Apply Crop</button>
   <button onclick="generatePDF()">Generate PDF</button>
 </div>
 
 <script>
 const { jsPDF } = window.jspdf;
-let receipts = [];
 
-function compressImage(file){
-  return new Promise(resolve => {
-    const img = new Image();
-    const reader = new FileReader();
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const cropBox = document.getElementById('cropBox');
 
-    reader.onload = e => img.src = e.target.result;
+let img = new Image();
+let scale = 1;
+let crop = {x:50,y:50,w:150,h:150};
+let dragging = false;
+let startX,startY;
+let croppedData = null;
+
+// LOAD IMAGE
+
+document.getElementById('receipt').addEventListener('change', function(){
+  const file = this.files[0];
+  const reader = new FileReader();
+
+  reader.onload = e => {
+    img = new Image();
 
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
 
-      const maxWidth = 800;
-      const scale = maxWidth / img.width;
+      scale = canvas.clientWidth / img.width;
 
-      canvas.width = maxWidth;
-      canvas.height = img.height * scale;
+      draw();
+      initCrop();
+    }
 
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    img.src = e.target.result;
+  }
 
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
-    };
+  reader.readAsDataURL(file);
+});
 
-    reader.readAsDataURL(file);
-  });
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,0,0);
 }
 
-// auto add receipt
+// INIT CROPPER
+function initCrop(){
+  cropBox.style.display='block';
+  updateBox();
+}
 
-document.getElementById('receipt').addEventListener('change', async function(){
-  const file = this.files[0];
-  if(!file) return;
+function updateBox(){
+  cropBox.style.left = (crop.x*scale)+"px";
+  cropBox.style.top = (crop.y*scale)+"px";
+  cropBox.style.width = (crop.w*scale)+"px";
+  cropBox.style.height = (crop.h*scale)+"px";
+}
+
+// TOUCH + DRAG
+cropBox.addEventListener('mousedown',startDrag);
+cropBox.addEventListener('touchstart',startDrag);
+
+function startDrag(e){
+  dragging = true;
+  const rect = canvas.getBoundingClientRect();
+
+  const clientX = e.touches?e.touches[0].clientX:e.clientX;
+  const clientY = e.touches?e.touches[0].clientY:e.clientY;
+
+  startX = clientX - rect.left;
+  startY = clientY - rect.top;
+
+  document.addEventListener('mousemove',move);
+  document.addEventListener('touchmove',move);
+  document.addEventListener('mouseup',end);
+  document.addEventListener('touchend',end);
+}
+
+function move(e){
+  if(!dragging) return;
+
+  const rect = canvas.getBoundingClientRect();
+
+  const clientX = e.touches?e.touches[0].clientX:e.clientX;
+  const clientY = e.touches?e.touches[0].clientY:e.clientY;
+
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+
+  const dx = (x-startX)/scale;
+  const dy = (y-startY)/scale;
+
+  crop.x += dx;
+  crop.y += dy;
+
+  startX = x;
+  startY = y;
+
+  draw();
+  updateBox();
+}
+
+function end(){
+  dragging = false;
+}
+
+// APPLY CROP
+function generateCrop(){
+  const temp = document.createElement('canvas');
+  const tctx = temp.getContext('2d');
+
+  temp.width = crop.w;
+  temp.height = crop.h;
+
+  tctx.drawImage(
+    img,
+    crop.x, crop.y, crop.w, crop.h,
+    0,0,crop.w,crop.h
+  );
+
+  croppedData = temp.toDataURL('image/jpeg',0.9);
+
+  draw();
+  tctx.drawImage(temp,0,0);
+}
+
+// PDF
+function generatePDF(){
+  if(!croppedData) return alert('Crop first');
+
+  const doc = new jsPDF('p','mm','a4');
+
+  let y = 20;
+
+  doc.setFontSize(16);
+  doc.text('COMPANY RECEIPT REPORT',10,y);
+
+  y+=10;
 
   const date = document.getElementById('date').value;
   const purpose = document.getElementById('purpose').value;
   const amount = document.getElementById('amount').value;
 
-  if(!date || !purpose){
-    alert('Please fill Date and Purpose first');
-    this.value = '';
-    return;
-  }
+  doc.setFontSize(11);
+  doc.text(`Date: ${date}`,10,y); y+=6;
+  doc.text(`Purpose: ${purpose}`,10,y); y+=6;
+  doc.text(`Amount: RM ${amount||'-'}`,10,y);
 
-  const imgData = await compressImage(file);
+  y+=10;
 
-  receipts.push({ date, purpose, amount, imgData });
+  doc.addImage(croppedData,'JPEG',10,y,180,120);
 
-  this.value = '';
-  document.getElementById('amount').value = '';
-
-  renderList();
-});
-
-function deleteReceipt(index){
-  receipts.splice(index,1);
-  renderList();
-}
-
-function renderList(){
-  const list = document.getElementById('list');
-  list.innerHTML = '';
-
-  receipts.forEach((r, index) => {
-    const div = document.createElement('div');
-    div.className = 'card';
-
-    div.innerHTML = `
-      <div class="card-header">
-        <div class="card-info">
-          <div><b>Date:</b> ${r.date}</div>
-          <div><b>Purpose:</b> ${r.purpose}</div>
-          <div><b>Amount:</b> RM ${r.amount || '-'}</div>
-        </div>
-        <button class="delete-btn" onclick="deleteReceipt(${index})">Delete</button>
-      </div>
-      <img src="${r.imgData}">
-    `;
-
-    list.appendChild(div);
-  });
-}
-
-// FIXED PDF (no overflow)
-async function generatePDF(){
-  const doc = new jsPDF('p','mm','a4');
-
-  for(let i = 0; i < receipts.length; i++){
-    const r = receipts[i];
-
-    if(i !== 0){
-      doc.addPage();
-    }
-
-    let y = 15;
-
-    doc.setFontSize(16);
-    doc.text('Receipt Report', 10, y);
-
-    y += 10;
-
-    doc.setFontSize(11);
-
-    doc.text(`Date: ${r.date}`, 10, y);
-    y += 6;
-
-    doc.text(`Purpose: ${r.purpose}`, 10, y);
-    y += 6;
-
-    doc.text(`Amount: RM ${r.amount || '-'}`, 10, y);
-    y += 8;
-
-    const img = new Image();
-    img.src = r.imgData;
-
-    await new Promise(resolve => img.onload = resolve);
-
-    const pageWidth = 190;
-    const maxPageHeight = 280;
-
-    let imgWidth = pageWidth;
-    let imgHeight = (img.height / img.width) * imgWidth;
-
-    if(imgHeight > 240){
-      imgHeight = 240;
-      imgWidth = (img.width / img.height) * imgHeight;
-    }
-
-    // FIX OVERFLOW
-    if(y + imgHeight > maxPageHeight){
-      doc.addPage();
-      y = 15;
-    }
-
-    doc.addImage(r.imgData, 'JPEG', 10, y, imgWidth, imgHeight);
-  }
-
-  doc.save('receipt-report.pdf');
+  doc.save('receipt.pdf');
 }
 </script>
 </body>
-  </html>
+      </html>
   
