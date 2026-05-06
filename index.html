@@ -96,13 +96,18 @@ let corners=[
 
 let dragging=null;
 
+// ==========================
+// IMAGE LOAD
+// ==========================
 file.onchange=e=>{
 let r=new FileReader();
 r.onload=ev=>img.src=ev.target.result;
 r.readAsDataURL(e.target.files[0]);
 };
 
-// MOVE CORNERS
+// ==========================
+// DRAG CORNERS
+// ==========================
 corners.forEach(c=>{
 let el=document.getElementById(c.id);
 
@@ -135,13 +140,42 @@ el.style.top=c.y+'px';
 }
 update();
 
-// ✅ REAL WORKING SCAN (FIXED VERSION)
+// ==========================
+// IMAGE COMPRESSOR
+// ==========================
+function compressImage(src, quality=0.75, maxW=1200){
+return new Promise(resolve=>{
+let i=new Image();
+i.src=src;
+
+i.onload=()=>{
+let c=document.createElement('canvas');
+let ctx=c.getContext('2d');
+
+let scale=maxW/i.width;
+c.width=maxW;
+c.height=i.height*scale;
+
+ctx.drawImage(i,0,0,c.width,c.height);
+
+resolve(c.toDataURL('image/jpeg',quality));
+};
+});
+}
+
+// ==========================
+// AUTO EDGE CROP (lightweight)
+// ==========================
 function applyCrop(){
 
 let image=new Image();
 image.src=img.src;
 
-image.onload=()=>{
+image.onload=async ()=>{
+
+// 🔥 compress first
+let compressed = await compressImage(image.src);
+image.src = compressed;
 
 let canvas=document.createElement('canvas');
 let ctx=canvas.getContext('2d');
@@ -154,22 +188,29 @@ let r=box.getBoundingClientRect();
 let sx=corners.map(p=>p.x*(image.width/r.width));
 let sy=corners.map(p=>p.y*(image.height/r.height));
 
-// SIMPLE STABLE QUAD APPROXIMATION (WORKING)
+// 🔥 auto bounding crop
+let minX=Math.min(...sx);
+let maxX=Math.max(...sx);
+let minY=Math.min(...sy);
+let maxY=Math.max(...sy);
+
 ctx.drawImage(
 image,
-sx[0],sy[0],
-sx[1]-sx[0],sy[3]-sy[0],
+minX,minY,
+maxX-minX,
+maxY-minY,
 0,0,
 canvas.width,
 canvas.height
 );
 
-img.src=canvas.toDataURL("image/jpeg",1);
+img.src=canvas.toDataURL("image/jpeg",0.85);
 };
-
 }
 
-// PDF
+// ==========================
+// PDF EXPORT
+// ==========================
 function generatePDF(){
 const {jsPDF}=window.jspdf;
 let doc=new jsPDF('p','mm','a4');
@@ -189,12 +230,14 @@ doc.text("Amount: RM "+document.getElementById('amount').value,10,y);
 
 y+=10;
 
-doc.addImage(img.src,'JPEG',10,y,180,120);
-
+// compress again for PDF safety
+compressImage(img.src,0.7).then(finalImg=>{
+doc.addImage(finalImg,'JPEG',10,y,180,120);
 doc.save("receipt.pdf");
+});
 }
 
 </script>
 
 </body>
-  </html>
+                              </html>
