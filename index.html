@@ -102,7 +102,6 @@ button{
 const { jsPDF } = window.jspdf;
 let receipts = [];
 
-// compress image
 function compressImage(file){
   return new Promise(resolve => {
     const img = new Image();
@@ -130,6 +129,7 @@ function compressImage(file){
 }
 
 // auto add receipt
+
 document.getElementById('receipt').addEventListener('change', async function(){
   const file = this.files[0];
   if(!file) return;
@@ -154,13 +154,11 @@ document.getElementById('receipt').addEventListener('change', async function(){
   renderList();
 });
 
-// delete receipt
 function deleteReceipt(index){
   receipts.splice(index,1);
   renderList();
 }
 
-// render list
 function renderList(){
   const list = document.getElementById('list');
   list.innerHTML = '';
@@ -185,7 +183,7 @@ function renderList(){
   });
 }
 
-// generate PDF
+// FIXED PDF (no overflow)
 async function generatePDF(){
   const doc = new jsPDF('p','mm','a4');
 
@@ -214,31 +212,34 @@ async function generatePDF(){
     doc.text(`Amount: RM ${r.amount || '-'}`, 10, y);
     y += 8;
 
-    // 🔥 FIX: get REAL image size
     const img = new Image();
     img.src = r.imgData;
 
-    await new Promise(resolve => {
-      img.onload = resolve;
-    });
+    await new Promise(resolve => img.onload = resolve);
 
-    const pageWidth = 190; // A4 width minus margin
-    const pageHeight = 260; // safe height
+    const pageWidth = 190;
+    const maxPageHeight = 280;
 
     let imgWidth = pageWidth;
     let imgHeight = (img.height / img.width) * imgWidth;
 
-    // If too tall, scale down
-    if(imgHeight > pageHeight){
-      imgHeight = pageHeight;
+    if(imgHeight > 240){
+      imgHeight = 240;
       imgWidth = (img.width / img.height) * imgHeight;
+    }
+
+    // FIX OVERFLOW
+    if(y + imgHeight > maxPageHeight){
+      doc.addPage();
+      y = 15;
     }
 
     doc.addImage(r.imgData, 'JPEG', 10, y, imgWidth, imgHeight);
   }
 
   doc.save('receipt-report.pdf');
-  }
+}
 </script>
 </body>
-    </html>
+  </html>
+  
