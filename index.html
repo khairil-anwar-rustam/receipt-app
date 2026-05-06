@@ -53,7 +53,33 @@ button{
   padding:12px;
   border-radius:10px;
   margin-bottom:12px;
-  position:relative;
+}
+
+.card-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.card-info{
+  font-size:14px;
+}
+
+.card img{
+  width:100%;
+  border-radius:8px;
+  margin-top:10px;
+}
+
+.delete-btn{
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:12px;
+  height:fit-content;
 }
 
 .card img{
@@ -166,9 +192,14 @@ function renderList(){
     const div = document.createElement('div');
     div.className = 'card';
     div.innerHTML = `
-      <button class="delete-btn" onclick="deleteReceipt(${index})">Delete</button>
-      <div class="row"><span><b>Date:</b> ${r.date}</span><span><b>RM ${r.amount || '-'}</b></span></div>
-      <div><b>Purpose:</b> ${r.purpose}</div>
+      <div class="card-header">
+        <div class="card-info">
+          <div><b>Date:</b> ${r.date}</div>
+          <div><b>Purpose:</b> ${r.purpose}</div>
+          <div><b>Amount:</b> RM ${r.amount || '-'}</div>
+        </div>
+        <button class="delete-btn" onclick="deleteReceipt(${index})">Delete</button>
+      </div>
       <img src="${r.imgData}">
     `;
     list.appendChild(div);
@@ -185,14 +216,36 @@ function generatePDF(){
 
   y += 10;
 
-  doc.setFontSize(10);
+  doc.setFontSize(11);
 
-  receipts.forEach((r) => {
+  receipts.forEach((r, index) => {
 
-    if(y > 250){
+    // New page per receipt for clarity
+    if(index !== 0){
       doc.addPage();
       y = 15;
     }
+
+    // Text
+    doc.text(`Date: ${r.date}`, 10, y);
+    y += 6;
+
+    doc.text(`Purpose: ${r.purpose}`, 10, y);
+    y += 6;
+
+    doc.text(`Amount: RM ${r.amount || '-'}`, 10, y);
+    y += 8;
+
+    // Large image (full width)
+    const pageWidth = 190; // A4 width minus margin
+    const imgHeight = 120; // Bigger height for clarity
+
+    doc.addImage(r.imgData, 'JPEG', 10, y, pageWidth, imgHeight);
+
+  });
+
+  doc.save('receipt-report.pdf');
+}
 
     doc.text(`Date: ${r.date}`, 10, y);
     y += 5;
@@ -213,3 +266,4 @@ function generatePDF(){
 </script>
 </body>
   </html>
+  
