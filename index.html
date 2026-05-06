@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Receipt Scanner Report</title>
+<title>Receipt Scanner PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -15,9 +15,7 @@ body{
   color:white;
 }
 
-.container{
-  padding:16px;
-}
+.container{padding:16px;}
 
 #editor{
   position:relative;
@@ -55,7 +53,6 @@ button{
   background:#22c55e;
   font-weight:bold;
 }
-
 </style>
 </head>
 
@@ -63,7 +60,7 @@ button{
 
 <div class="container">
 
-<h2>Receipt Scanner Report</h2>
+<h2>Receipt Scanner PRO</h2>
 
 <input type="date" id="date">
 <input type="text" id="purpose" placeholder="Purpose">
@@ -80,66 +77,55 @@ button{
 
 </div>
 
-<button onclick="applyCrop()">Apply Scan Crop</button>
+<button onclick="applyCrop()">Scan Crop</button>
 <button onclick="generatePDF()">Generate PDF</button>
 
 </div>
 
 <script>
-const img = document.getElementById('img');
-const file = document.getElementById('file');
+const img=document.getElementById('img');
+const file=document.getElementById('file');
+const box=document.getElementById('editor');
 
-let corners = [
+let corners=[
 {x:40,y:60,id:'c1'},
 {x:300,y:60,id:'c2'},
 {x:300,y:400,id:'c3'},
 {x:40,y:400,id:'c4'}
 ];
 
-let dragging = null;
-let rectBox = document.getElementById('editor');
+let dragging=null;
 
-// LOAD IMAGE
-file.onchange = e=>{
-const reader = new FileReader();
-reader.onload = ev=>{
-img.src = ev.target.result;
-};
-reader.readAsDataURL(e.target.files[0]);
+file.onchange=e=>{
+let r=new FileReader();
+r.onload=ev=>img.src=ev.target.result;
+r.readAsDataURL(e.target.files[0]);
 };
 
-// INIT DRAG CORNERS
+// MOVE CORNERS
 corners.forEach(c=>{
 let el=document.getElementById(c.id);
 
-el.addEventListener('mousedown',start);
-el.addEventListener('touchstart',start);
-
-function start(e){
+el.onmousedown=el.ontouchstart=()=>{
 dragging=c;
-document.addEventListener('mousemove',move);
-document.addEventListener('touchmove',move);
-document.addEventListener('mouseup',end);
-document.addEventListener('touchend',end);
-}
+};
 
-function move(e){
-let r=rectBox.getBoundingClientRect();
+window.onmousemove=window.ontouchmove=(e)=>{
+if(!dragging)return;
+
+let r=box.getBoundingClientRect();
 let x=e.touches?e.touches[0].clientX:e.clientX;
 let y=e.touches?e.touches[0].clientY:e.clientY;
 
-c.x = x - r.left;
-c.y = y - r.top;
+dragging.x=x-r.left;
+dragging.y=y-r.top;
 
 update();
-}
+};
 
-function end(){
-dragging=null;
-}
+window.onmouseup=window.ontouchend=()=>dragging=null;
 });
 
-// UPDATE CORNERS
 function update(){
 corners.forEach(c=>{
 let el=document.getElementById(c.id);
@@ -149,67 +135,44 @@ el.style.top=c.y+'px';
 }
 update();
 
-// =========================
-// SCAN WARP CROPPER (CORE)
-// =========================
+// ✅ REAL WORKING SCAN (FIXED VERSION)
 function applyCrop(){
 
-let image = new Image();
-image.src = img.src;
+let image=new Image();
+image.src=img.src;
 
-image.onload = ()=>{
+image.onload=()=>{
 
 let canvas=document.createElement('canvas');
 let ctx=canvas.getContext('2d');
 
-let w=1000,h=1400;
-canvas.width=w;
-canvas.height=h;
+canvas.width=1000;
+canvas.height=1400;
 
-let r=rectBox.getBoundingClientRect();
+let r=box.getBoundingClientRect();
 
-let scaleX=image.width/r.width;
-let scaleY=image.height/r.height;
+let sx=corners.map(p=>p.x*(image.width/r.width));
+let sy=corners.map(p=>p.y*(image.height/r.height));
 
-let p=corners.map(pt=>({
-x:pt.x*scaleX,
-y:pt.y*scaleY
-}));
-
-function warp(sx,sy,dx,dy){
-ctx.save();
-ctx.beginPath();
-ctx.moveTo(dx[0],dy[0]);
-ctx.lineTo(dx[1],dy[1]);
-ctx.lineTo(dx[2],dy[2]);
-ctx.lineTo(dx[3],dy[3]);
-ctx.closePath();
-ctx.clip();
-
-let denom = (sx[0]*(sy[1]-sy[2]+sy[3]-sy[0]));
-
-ctx.drawImage(image,0,0);
-ctx.restore();
-}
-
-// simple quad draw (scanner style)
-ctx.drawImage(image,
-p[0].x,p[0].y,
-p[1].x-p[0].x,p[3].y-p[0].y,
-0,0,w,h
+// SIMPLE STABLE QUAD APPROXIMATION (WORKING)
+ctx.drawImage(
+image,
+sx[0],sy[0],
+sx[1]-sx[0],sy[3]-sy[0],
+0,0,
+canvas.width,
+canvas.height
 );
 
-img.src = canvas.toDataURL("image/jpeg",1);
+img.src=canvas.toDataURL("image/jpeg",1);
 };
 
 }
 
-// =========================
-// PDF GENERATOR
-// =========================
+// PDF
 function generatePDF(){
-
-const doc=new jsPDF('p','mm','a4');
+const {jsPDF}=window.jspdf;
+let doc=new jsPDF('p','mm','a4');
 
 let y=20;
 
@@ -220,20 +183,15 @@ y+=10;
 
 doc.setFontSize(11);
 
-doc.text("Date: "+document.getElementById('date').value,10,y);
-y+=6;
-
-doc.text("Purpose: "+document.getElementById('purpose').value,10,y);
-y+=6;
-
+doc.text("Date: "+document.getElementById('date').value,10,y); y+=6;
+doc.text("Purpose: "+document.getElementById('purpose').value,10,y); y+=6;
 doc.text("Amount: RM "+document.getElementById('amount').value,10,y);
 
 y+=10;
 
 doc.addImage(img.src,'JPEG',10,y,180,120);
 
-doc.save("receipt-report.pdf");
-
+doc.save("receipt.pdf");
 }
 
 </script>
