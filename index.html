@@ -1,243 +1,475 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Receipt Scanner PRO</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Image Compressor + Renamer</title>
 
 <style>
-body{
+*{
   margin:0;
-  font-family:Arial;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial, sans-serif;
+  background:#0f172a;
+  color:white;
+  min-height:100vh;
+  padding:20px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+.title{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+.title h1{
+  font-size:32px;
+  margin-bottom:10px;
+}
+
+.card{
+  background:#111827;
+  border:1px solid #1f2937;
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+.upload-box{
+  border:2px dashed #334155;
+  border-radius:18px;
+  padding:40px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.upload-box:hover{
+  border-color:#38bdf8;
   background:#0b1220;
+}
+
+.upload-box p{
+  color:#cbd5e1;
+}
+
+input[type="file"]{
+  display:none;
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+  margin-top:20px;
+}
+
+.control-group{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+label{
+  font-size:14px;
+  color:#cbd5e1;
+}
+
+input, select{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#1e293b;
   color:white;
 }
 
-.container{padding:16px;}
-
-#editor{
-  position:relative;
-  height:60vh;
-  background:black;
-  overflow:hidden;
-  border-radius:10px;
-}
-
-#img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-}
-
-.corner{
-  position:absolute;
-  width:18px;
-  height:18px;
-  background:#22c55e;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  touch-action:none;
-}
-
-input,button{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border:none;
-  border-radius:8px;
+.range-value{
+  margin-top:6px;
+  font-size:13px;
+  color:#38bdf8;
 }
 
 button{
-  background:#22c55e;
+  padding:14px 18px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
   font-weight:bold;
+  transition:0.2s;
+}
+
+.primary{
+  background:#38bdf8;
+  color:#001018;
+}
+
+.primary:hover{
+  transform:translateY(-2px);
+}
+
+.secondary{
+  background:#1e293b;
+  color:white;
+}
+
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:20px;
+}
+
+.preview-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:18px;
+  margin-top:20px;
+}
+
+.preview-card{
+  background:#0b1220;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid #1f2937;
+}
+
+.preview-image{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+  background:black;
+}
+
+.preview-info{
+  padding:14px;
+}
+
+.preview-info h3{
+  font-size:14px;
+  word-break:break-all;
+  margin-bottom:10px;
+}
+
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+  font-size:13px;
+  color:#cbd5e1;
+}
+
+.download-btn{
+  width:100%;
+  margin-top:12px;
+  background:#22c55e;
+  color:white;
+}
+
+.download-btn:hover{
+  opacity:0.9;
+}
+
+.status{
+  margin-top:15px;
+  color:#38bdf8;
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  margin-top:30px;
+  color:#94a3b8;
+  font-size:13px;
+}
+
+@media(max-width:600px){
+  .title h1{
+    font-size:24px;
+  }
+
+  .preview-image{
+    height:180px;
+  }
 }
 </style>
 </head>
-
 <body>
 
 <div class="container">
 
-<h2>Receipt Scanner PRO</h2>
+  <div class="title">
+    <h1>📸 Image Compressor + Renamer</h1>
+    <p>Upload → Compress → Rename → Download</p>
+  </div>
 
-<input type="date" id="date">
-<input type="text" id="purpose" placeholder="Purpose">
-<input type="number" id="amount" placeholder="Amount">
-<input type="file" id="file">
+  <div class="card">
 
-<div id="editor">
-<img id="img">
+    <label class="upload-box" for="imageInput">
+      <h2>Upload Images</h2>
+      <p>Tap here to select multiple images</p>
+    </label>
 
-<div class="corner" id="c1"></div>
-<div class="corner" id="c2"></div>
-<div class="corner" id="c3"></div>
-<div class="corner" id="c4"></div>
+    <input type="file" id="imageInput" accept="image/*" multiple>
 
-</div>
+    <div class="controls">
 
-<button onclick="applyCrop()">Scan Crop</button>
-<button onclick="generatePDF()">Generate PDF</button>
+      <div class="control-group">
+        <label>Compression Quality</label>
+        <input type="range" id="quality" min="10" max="100" value="70">
+        <div class="range-value" id="qualityValue">70%</div>
+      </div>
+
+      <div class="control-group">
+        <label>Rename Prefix</label>
+        <input type="text" id="prefix" placeholder="example: project_image">
+      </div>
+
+      <div class="control-group">
+        <label>Output Format</label>
+        <select id="format">
+          <option value="image/jpeg">JPG</option>
+          <option value="image/webp">WEBP</option>
+          <option value="image/png">PNG</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="compressBtn">Compress Images</button>
+      <button class="secondary" id="downloadAllBtn">Download All</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+  </div>
+
+  <div class="preview-grid" id="previewGrid"></div>
+
+  <div class="footer">
+    Works fully offline on GitHub Pages.
+  </div>
 
 </div>
 
 <script>
-const img=document.getElementById('img');
-const file=document.getElementById('file');
-const box=document.getElementById('editor');
+const imageInput = document.getElementById('imageInput');
+const previewGrid = document.getElementById('previewGrid');
+const compressBtn = document.getElementById('compressBtn');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+const qualitySlider = document.getElementById('quality');
+const qualityValue = document.getElementById('qualityValue');
+const prefixInput = document.getElementById('prefix');
+const formatSelect = document.getElementById('format');
+const statusText = document.getElementById('status');
 
-let corners=[
-{x:40,y:60,id:'c1'},
-{x:300,y:60,id:'c2'},
-{x:300,y:400,id:'c3'},
-{x:40,y:400,id:'c4'}
-];
+let uploadedFiles = [];
+let compressedFiles = [];
 
-let dragging=null;
-
-// ==========================
-// IMAGE LOAD
-// ==========================
-file.onchange=e=>{
-let r=new FileReader();
-r.onload=ev=>img.src=ev.target.result;
-r.readAsDataURL(e.target.files[0]);
-};
-
-// ==========================
-// DRAG CORNERS
-// ==========================
-corners.forEach(c=>{
-let el=document.getElementById(c.id);
-
-el.onmousedown=el.ontouchstart=()=>{
-dragging=c;
-};
-
-window.onmousemove=window.ontouchmove=(e)=>{
-if(!dragging)return;
-
-let r=box.getBoundingClientRect();
-let x=e.touches?e.touches[0].clientX:e.clientX;
-let y=e.touches?e.touches[0].clientY:e.clientY;
-
-dragging.x=x-r.left;
-dragging.y=y-r.top;
-
-update();
-};
-
-window.onmouseup=window.ontouchend=()=>dragging=null;
+qualitySlider.addEventListener('input', () => {
+  qualityValue.innerText = qualitySlider.value + '%';
 });
 
-function update(){
-corners.forEach(c=>{
-let el=document.getElementById(c.id);
-el.style.left=c.x+'px';
-el.style.top=c.y+'px';
+imageInput.addEventListener('change', (e) => {
+  uploadedFiles = Array.from(e.target.files);
+  compressedFiles = [];
+  renderOriginalPreview();
 });
+
+function formatBytes(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
 }
-update();
 
-// ==========================
-// IMAGE COMPRESSOR
-// ==========================
-function compressImage(src, quality=0.75, maxW=1200){
-return new Promise(resolve=>{
-let i=new Image();
-i.src=src;
+function renderOriginalPreview(){
+  previewGrid.innerHTML = '';
 
-i.onload=()=>{
-let c=document.createElement('canvas');
-let ctx=c.getContext('2d');
+  if(uploadedFiles.length === 0){
+    statusText.innerText = 'No image selected';
+    return;
+  }
 
-let scale=maxW/i.width;
-c.width=maxW;
-c.height=i.height*scale;
+  statusText.innerText = uploadedFiles.length + ' image(s) loaded';
 
-ctx.drawImage(i,0,0,c.width,c.height);
+  uploadedFiles.forEach((file, index) => {
+    const reader = new FileReader();
 
-resolve(c.toDataURL('image/jpeg',quality));
-};
+    reader.onload = (event) => {
+      const card = document.createElement('div');
+      card.className = 'preview-card';
+
+      card.innerHTML = `
+        <img class="preview-image" src="${event.target.result}">
+
+        <div class="preview-info">
+          <h3>${file.name}</h3>
+
+          <div class="info-row">
+            <span>Original</span>
+            <span>${formatBytes(file.size)}</span>
+          </div>
+
+          <div class="info-row">
+            <span>Status</span>
+            <span id="status-${index}">Waiting</span>
+          </div>
+
+          <button class="download-btn" disabled>
+            Compress First
+          </button>
+        </div>
+      `;
+
+      previewGrid.appendChild(card);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+compressBtn.addEventListener('click', async () => {
+
+  if(uploadedFiles.length === 0){
+    alert('Please upload images first');
+    return;
+  }
+
+  compressedFiles = [];
+  statusText.innerText = 'Compressing images...';
+
+  const quality = Number(qualitySlider.value) / 100;
+  const prefix = prefixInput.value.trim() || 'compressed_image';
+  const format = formatSelect.value;
+
+  const cards = document.querySelectorAll('.preview-card');
+
+  for(let i = 0; i < uploadedFiles.length; i++){
+
+    const file = uploadedFiles[i];
+
+    const compressedBlob = await compressImage(file, quality, format);
+
+    const extension = format.split('/')[1] === 'jpeg'
+      ? 'jpg'
+      : format.split('/')[1];
+
+    const fileName = `${prefix}_${i + 1}.${extension}`;
+
+    compressedFiles.push({
+      blob: compressedBlob,
+      name: fileName
+    });
+
+    const imageURL = URL.createObjectURL(compressedBlob);
+
+    const button = cards[i].querySelector('.download-btn');
+    const status = cards[i].querySelector(`#status-${i}`);
+
+    status.innerText = 'Compressed';
+
+    const infoRows = cards[i].querySelectorAll('.info-row');
+
+    const compressedRow = document.createElement('div');
+    compressedRow.className = 'info-row';
+    compressedRow.innerHTML = `
+      <span>Compressed</span>
+      <span>${formatBytes(compressedBlob.size)}</span>
+    `;
+
+    infoRows[infoRows.length - 1].after(compressedRow);
+
+    button.disabled = false;
+    button.innerText = 'Download';
+
+    button.onclick = () => {
+      downloadFile(imageURL, fileName);
+    };
+  }
+
+  statusText.innerText = 'Compression completed';
 });
+
+function compressImage(file, quality, format){
+  return new Promise((resolve) => {
+
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target.result;
+    };
+
+    img.onload = () => {
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      let width = img.width;
+      let height = img.height;
+
+      const maxSize = 2500;
+
+      if(width > maxSize || height > maxSize){
+        if(width > height){
+          height *= maxSize / width;
+          width = maxSize;
+        } else {
+          width *= maxSize / height;
+          height = maxSize;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, format, quality);
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
-// ==========================
-// AUTO EDGE CROP (lightweight)
-// ==========================
-function applyCrop(){
-
-let image=new Image();
-image.src=img.src;
-
-image.onload=async ()=>{
-
-// 🔥 compress first
-let compressed = await compressImage(image.src);
-image.src = compressed;
-
-let canvas=document.createElement('canvas');
-let ctx=canvas.getContext('2d');
-
-canvas.width=1000;
-canvas.height=1400;
-
-let r=box.getBoundingClientRect();
-
-let sx=corners.map(p=>p.x*(image.width/r.width));
-let sy=corners.map(p=>p.y*(image.height/r.height));
-
-// 🔥 auto bounding crop
-let minX=Math.min(...sx);
-let maxX=Math.max(...sx);
-let minY=Math.min(...sy);
-let maxY=Math.max(...sy);
-
-ctx.drawImage(
-image,
-minX,minY,
-maxX-minX,
-maxY-minY,
-0,0,
-canvas.width,
-canvas.height
-);
-
-img.src=canvas.toDataURL("image/jpeg",0.85);
-};
+function downloadFile(url, fileName){
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
-// ==========================
-// PDF EXPORT
-// ==========================
-function generatePDF(){
-const {jsPDF}=window.jspdf;
-let doc=new jsPDF('p','mm','a4');
+downloadAllBtn.addEventListener('click', () => {
 
-let y=20;
+  if(compressedFiles.length === 0){
+    alert('No compressed images available');
+    return;
+  }
 
-doc.setFontSize(18);
-doc.text("COMPANY RECEIPT REPORT",10,y);
+  compressedFiles.forEach((file, index) => {
 
-y+=10;
+    const url = URL.createObjectURL(file.blob);
 
-doc.setFontSize(11);
-
-doc.text("Date: "+document.getElementById('date').value,10,y); y+=6;
-doc.text("Purpose: "+document.getElementById('purpose').value,10,y); y+=6;
-doc.text("Amount: RM "+document.getElementById('amount').value,10,y);
-
-y+=10;
-
-// compress again for PDF safety
-compressImage(img.src,0.7).then(finalImg=>{
-doc.addImage(finalImg,'JPEG',10,y,180,120);
-doc.save("receipt.pdf");
+    setTimeout(() => {
+      downloadFile(url, file.name);
+    }, index * 300);
+  });
 });
-}
-
 </script>
 
 </body>
-                              </html>
+  </html>
+  
