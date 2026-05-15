@@ -6,379 +6,160 @@
 <title>Image Compressor + Renamer</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
 body{
+  margin:0;
+  font-family:Arial;
   background:#0f172a;
   color:white;
-  font-family:Arial,sans-serif;
   padding:20px;
 }
 
 .container{
-  max-width:1100px;
+  max-width:1000px;
   margin:auto;
-}
-
-.title{
-  text-align:center;
-  margin-bottom:25px;
-}
-
-.title h1{
-  font-size:32px;
-  margin-bottom:10px;
-}
-
-.card{
-  background:#111827;
-  border-radius:20px;
-  padding:20px;
-  margin-bottom:20px;
-  border:1px solid #1f2937;
 }
 
 .upload-box{
   border:2px dashed #334155;
-  border-radius:20px;
-  padding:50px 20px;
+  padding:50px;
   text-align:center;
+  border-radius:20px;
   cursor:pointer;
-  transition:0.2s;
-}
-
-.upload-box:hover{
-  border-color:#38bdf8;
-  background:#0b1220;
-}
-
-.upload-box h2{
-  margin-bottom:10px;
-}
-
-.upload-box p{
-  color:#cbd5e1;
-}
-
-input[type=file]{
-  display:none;
 }
 
 .controls{
+  margin-top:15px;
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:15px;
-  margin-top:20px;
+  gap:10px;
 }
 
-.control{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-label{
-  color:#cbd5e1;
-  font-size:14px;
-}
-
-input,
-select{
-  padding:12px;
+input,select,button{
+  padding:10px;
+  border-radius:10px;
   border:none;
-  border-radius:12px;
-  background:#1e293b;
-  color:white;
-}
-
-.range-value{
-  color:#38bdf8;
-  font-size:13px;
-}
-
-.actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:12px;
-  margin-top:20px;
-}
-
-button{
-  border:none;
-  border-radius:14px;
-  padding:14px 18px;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-.primary{
-  background:#38bdf8;
-  color:#001018;
-}
-
-.secondary{
-  background:#1e293b;
-  color:white;
-}
-
-.download-btn{
-  width:100%;
-  margin-top:12px;
-  background:#22c55e;
-  color:white;
 }
 
 .preview-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
-  gap:18px;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:15px;
+  margin-top:20px;
 }
 
-.preview-card{
+.card{
   background:#111827;
-  border-radius:18px;
-  overflow:hidden;
-  border:1px solid #1f2937;
+  padding:10px;
+  border-radius:15px;
 }
 
-.preview-image{
+img{
   width:100%;
-  height:220px;
+  height:180px;
   object-fit:cover;
-  background:black;
+  border-radius:10px;
 }
 
-.preview-info{
-  padding:14px;
+button{
+  cursor:pointer;
 }
 
-.preview-info h3{
-  font-size:14px;
-  margin-bottom:10px;
-  word-break:break-all;
-}
-
-.info-row{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:8px;
-  font-size:13px;
-  color:#cbd5e1;
-}
-
-.status{
-  margin-top:15px;
-  color:#38bdf8;
-}
-
-.footer{
-  text-align:center;
-  margin-top:30px;
-  color:#94a3b8;
-  font-size:13px;
-}
-
-@media(max-width:600px){
-
-  .title h1{
-    font-size:24px;
-  }
-
-  .preview-image{
-    height:180px;
-  }
-
-}
+.primary{background:#38bdf8;}
+.green{background:#22c55e;}
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
-  <div class="title">
-    <h1>📸 Image Compressor + Renamer</h1>
-    <p>Upload → Compress → Rename → Download</p>
+  <div class="upload-box" id="uploadBox">
+    <h2>Upload Images</h2>
+    <p>Tap to select multiple images</p>
   </div>
 
-  <div class="card">
+  <input type="file" id="imageInput" multiple accept="image/*">
 
-    <div class="upload-box" id="uploadBox">
-      <h2>Upload Images</h2>
-      <p>Tap to select multiple images</p>
-    </div>
+  <div class="controls">
 
-    <input
-      type="file"
-      id="imageInput"
-      accept="image/*"
-      multiple="multiple"
-    >
+    <input type="text" id="prefix" placeholder="Filename prefix">
 
-    <div class="controls">
+    <select id="format">
+      <option value="image/jpeg">JPG</option>
+      <option value="image/webp">WEBP</option>
+      <option value="image/png">PNG</option>
+    </select>
 
-      <div class="control">
-        <label>Compression Quality</label>
-        <input type="range" id="quality" min="10" max="100" value="70">
-        <div class="range-value" id="qualityValue">70%</div>
-      </div>
+    <input type="range" id="quality" min="10" max="100" value="70">
 
-      <div class="control">
-        <label>Rename Prefix</label>
-        <input type="text" id="prefix" placeholder="example: project_image">
-      </div>
-
-      <div class="control">
-        <label>Output Format</label>
-
-        <select id="format">
-          <option value="image/jpeg">JPG</option>
-          <option value="image/webp">WEBP</option>
-          <option value="image/png">PNG</option>
-        </select>
-      </div>
-
-    </div>
-
-    <div class="actions">
-      <button class="primary" id="compressBtn">
-        Compress Images
-      </button>
-
-      <button class="secondary" id="downloadAllBtn">
-        Download All
-      </button>
-    </div>
-
-    <div class="status" id="status"></div>
+    <button class="primary" id="compressBtn">Compress</button>
+    <button class="green" id="downloadAll">Download All</button>
 
   </div>
 
-  <div class="preview-grid" id="previewGrid"></div>
+  <div id="status"></div>
 
-  <div class="footer">
-    Works fully offline on GitHub Pages
-  </div>
+  <div class="preview-grid" id="preview"></div>
 
 </div>
 
 <script>
 
-const imageInput = document.getElementById('imageInput');
 const uploadBox = document.getElementById('uploadBox');
+const imageInput = document.getElementById('imageInput');
+const preview = document.getElementById('preview');
+const status = document.getElementById('status');
 
-const previewGrid = document.getElementById('previewGrid');
 const compressBtn = document.getElementById('compressBtn');
-const downloadAllBtn = document.getElementById('downloadAllBtn');
-
-const qualitySlider = document.getElementById('quality');
-const qualityValue = document.getElementById('qualityValue');
+const downloadAllBtn = document.getElementById('downloadAll');
 
 const prefixInput = document.getElementById('prefix');
 const formatSelect = document.getElementById('format');
+const qualityInput = document.getElementById('quality');
 
-const statusText = document.getElementById('status');
+let files = [];
+let results = [];
 
-let uploadedFiles = [];
-let compressedFiles = [];
+/* FIX UPLOAD BUTTON (MAIN FIX) */
+uploadBox.addEventListener('click', openPicker);
+uploadBox.addEventListener('touchstart', openPicker);
 
-uploadBox.addEventListener('click', () => {
+function openPicker(e){
+  e.preventDefault();
   imageInput.click();
-});
+}
 
-qualitySlider.addEventListener('input', () => {
-  qualityValue.innerText = qualitySlider.value + '%';
-});
-
+/* MULTI FILE SUPPORT */
 imageInput.addEventListener('change', (e) => {
 
   const newFiles = Array.from(e.target.files);
-
-  for(const file of newFiles){
-    uploadedFiles.push(file);
-  }
-
-  compressedFiles = [];
-
-  renderPreview();
+  files.push(...newFiles);
 
   imageInput.value = '';
 
+  render();
 });
 
-function formatBytes(bytes){
+function render(){
 
-  if(bytes < 1024){
-    return bytes + ' B';
-  }
+  preview.innerHTML = '';
 
-  if(bytes < 1048576){
-    return (bytes / 1024).toFixed(1) + ' KB';
-  }
-
-  return (bytes / 1048576).toFixed(2) + ' MB';
-
-}
-
-function renderPreview(){
-
-  previewGrid.innerHTML = '';
-
-  if(uploadedFiles.length === 0){
-
-    statusText.innerText = 'No image selected';
-
-    return;
-
-  }
-
-  statusText.innerText =
-    uploadedFiles.length + ' image(s) loaded';
-
-  uploadedFiles.forEach((file,index) => {
+  files.forEach((file,i) => {
 
     const reader = new FileReader();
 
     reader.onload = (e) => {
 
-      const card = document.createElement('div');
+      const div = document.createElement('div');
+      div.className = 'card';
 
-      card.className = 'preview-card';
-
-      card.innerHTML = `
-        <img class="preview-image" src="${e.target.result}">
-
-        <div class="preview-info">
-
-          <h3>${file.name}</h3>
-
-          <div class="info-row">
-            <span>Original</span>
-            <span>${formatBytes(file.size)}</span>
-          </div>
-
-          <div class="info-row">
-            <span>Status</span>
-            <span id="status-${index}">
-              Waiting
-            </span>
-          </div>
-
-          <button
-            class="download-btn"
-            id="download-${index}"
-            disabled
-          >
-            Compress First
-          </button>
-
-        </div>
+      div.innerHTML = `
+        <img src="${e.target.result}">
+        <p>${file.name}</p>
+        <p id="st-${i}">Waiting</p>
+        <button id="btn-${i}" disabled>Not Ready</button>
       `;
 
-      previewGrid.appendChild(card);
+      preview.appendChild(div);
 
     };
 
@@ -386,502 +167,113 @@ function renderPreview(){
 
   });
 
+  status.innerText = files.length + " images loaded";
 }
 
-compressBtn.addEventListener('click', async () => {
+/* COMPRESS */
+compressBtn.onclick = async () => {
 
-  if(uploadedFiles.length === 0){
+  results = [];
 
-    alert('Please upload images first');
+  const quality = qualityInput.value / 100;
+  const format = formatSelect.value;
+  const prefix = prefixInput.value || "image";
 
-    return;
+  for(let i=0;i<files.length;i++){
 
-  }
+    const blob = await compress(files[i],quality,format);
 
-  compressedFiles = [];
+    const name = `${prefix}_${i+1}.${format.split('/')[1]}`;
 
-  statusText.innerText = 'Compressing images...';
+    results.push({blob,name});
 
-  const quality =
-    Number(qualitySlider.value) / 100;
+    const btn = document.getElementById(`btn-${i}`);
+    const st = document.getElementById(`st-${i}`);
 
-  const prefix =
-    prefixInput.value.trim() || 'compressed_image';
+    btn.disabled = false;
+    btn.innerText = "Download";
 
-  const format =
-    formatSelect.value;
+    const url = URL.createObjectURL(blob);
 
-  const cards =
-    document.querySelectorAll('.preview-card');
+    btn.onclick = () => download(url,name);
 
-  for(let i=0;i<uploadedFiles.length;i++){
-
-    const file = uploadedFiles[i];
-
-    const compressedBlob =
-      await compressImage(file,quality,format);
-
-    const extension =
-      format === 'image/jpeg'
-      ? 'jpg'
-      : format.split('/')[1];
-
-    const fileName =
-      `${prefix}_${i+1}.${extension}`;
-
-    compressedFiles.push({
-      blob:compressedBlob,
-      name:fileName
-    });
-
-    const imageURL =
-      URL.createObjectURL(compressedBlob);
-
-    const status =
-      cards[i].querySelector(`#status-${i}`);
-
-    status.innerText = 'Compressed';
-
-    const row = document.createElement('div');
-
-    row.className = 'info-row';
-
-    row.innerHTML = `
-      <span>Compressed</span>
-      <span>${formatBytes(compressedBlob.size)}</span>
-    `;
-
-    cards[i]
-      .querySelector('.preview-info')
-      .appendChild(row);
-
-    const button =
-      cards[i].querySelector(`#download-${i}`);
-
-    button.disabled = false;
-
-    button.innerText = 'Download';
-
-    button.onclick = () => {
-
-      downloadFile(imageURL,fileName);
-
-    };
+    st.innerText = "Done";
 
   }
 
-  statusText.innerText =
-    'Compression completed';
-
-});
-
-function compressImage(file,quality,format){
-
-  return new Promise((resolve) => {
-
-    const img = new Image();
-
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      img.src = e.target.result;
-    };
-
-    img.onload = () => {
-
-      const canvas =
-        document.createElement('canvas');
-
-      const ctx =
-        canvas.getContext('2d');
-
-      let width = img.width;
-      let height = img.height;
-
-      const maxSize = 2500;
-
-      if(width > maxSize || height > maxSize){
-
-        if(width > height){
-
-          height *= maxSize / width;
-          width = maxSize;
-
-        }else{
-
-          width *= maxSize / height;
-          height = maxSize;
-
-        }
-
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      ctx.drawImage(img,0,0,width,height);
-<script>
-
-const imageInput = document.getElementById('imageInput');
-const uploadBox = document.getElementById('uploadBox');
-
-const previewGrid = document.getElementById('previewGrid');
-
-const compressBtn = document.getElementById('compressBtn');
-const downloadAllBtn = document.getElementById('downloadAllBtn');
-
-const qualitySlider = document.getElementById('quality');
-const qualityValue = document.getElementById('qualityValue');
-
-const prefixInput = document.getElementById('prefix');
-const formatSelect = document.getElementById('format');
-
-const statusText = document.getElementById('status');
-
-let uploadedFiles = [];
-let compressedFiles = [];
-
-uploadBox.onclick = () => {
-  imageInput.click();
+  status.innerText = "Compression complete";
 };
 
-qualitySlider.oninput = () => {
-  qualityValue.innerText = qualitySlider.value + '%';
-};
-
-imageInput.addEventListener('change', (e) => {
-
-  const files = Array.from(e.target.files);
-
-  files.forEach(file => {
-    uploadedFiles.push(file);
-  });
-
-  renderPreview();
-
-  imageInput.value = '';
-
-});
-
-function formatBytes(bytes){
-
-  if(bytes < 1024){
-    return bytes + ' B';
-  }
-
-  if(bytes < 1048576){
-    return (bytes / 1024).toFixed(1) + ' KB';
-  }
-
-  return (bytes / 1048576).toFixed(2) + ' MB';
-
-}
-
-function renderPreview(){
-
-  previewGrid.innerHTML = '';
-
-  uploadedFiles.forEach((file,index) => {
-
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-
-      const card = document.createElement('div');
-
-      card.className = 'preview-card';
-
-      card.innerHTML = `
-
-        <img class="preview-image" src="${e.target.result}">
-
-        <div class="preview-info">
-
-          <h3>${file.name}</h3>
-
-          <div class="info-row">
-            <span>Original</span>
-            <span>${formatBytes(file.size)}</span>
-          </div>
-
-          <div class="info-row">
-            <span>Status</span>
-            <span id="status-${index}">
-              Waiting
-            </span>
-          </div>
-
-          <button
-            class="download-btn"
-            id="download-${index}"
-            disabled
-          >
-            Compress First
-          </button>
-
-        </div>
-
-      `;
-
-      previewGrid.appendChild(card);
-
-    };
-
-    reader.readAsDataURL(file);
-
-  });
-
-  statusText.innerText =
-    uploadedFiles.length + ' image(s) loaded';
-
-}
-
-compressBtn.addEventListener('click', async () => {
-
-  if(uploadedFiles.length === 0){
-
-    alert('Upload images first');
-
-    return;
-
-  }
-
-  compressedFiles = [];
-
-  statusText.innerText = 'Compressing...';
-
-  compressBtn.disabled = true;
-
-  const quality =
-    Number(qualitySlider.value) / 100;
-
-  const format =
-    formatSelect.value;
-
-  const prefix =
-    prefixInput.value.trim() || 'compressed';
-
-  const cards =
-    document.querySelectorAll('.preview-card');
-
-  for(let i=0;i<uploadedFiles.length;i++){
-
-    try{
-
-      const file = uploadedFiles[i];
-
-      const blob =
-        await compressImage(file,quality,format);
-
-      const extension =
-        format === 'image/jpeg'
-        ? 'jpg'
-        : format.split('/')[1];
-
-      const fileName =
-        `${prefix}_${i+1}.${extension}`;
-
-      compressedFiles.push({
-        blob,
-        name:fileName
-      });
-
-      const button =
-        document.getElementById(`download-${i}`);
-
-      const status =
-        document.getElementById(`status-${i}`);
-
-      status.innerText = 'Compressed';
-
-      button.disabled = false;
-
-      button.innerText = 'Download';
-
-      button.onclick = () => {
-
-        const url =
-          URL.createObjectURL(blob);
-
-        downloadFile(url,fileName);
-
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        },3000);
-
-      };
-
-      const row = document.createElement('div');
-
-      row.className = 'info-row';
-
-      row.innerHTML = `
-        <span>Compressed</span>
-        <span>${formatBytes(blob.size)}</span>
-      `;
-
-      cards[i]
-        .querySelector('.preview-info')
-        .appendChild(row);
-
-      statusText.innerText =
-        `Compressed ${i+1}/${uploadedFiles.length}`;
-
-      await delay(50);
-
-    }catch(err){
-
-      console.error(err);
-
-    }
-
-  }
-
-  compressBtn.disabled = false;
-
-  statusText.innerText =
-    'Compression complete';
-
-});
-
-function compressImage(file,quality,format){
-
-  return new Promise((resolve,reject) => {
-
-    const img = new Image();
-
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      img.src = e.target.result;
-    };
-
-    reader.onerror = reject;
-
-    img.onload = () => {
-
-      try{
-
-        const canvas =
-          document.createElement('canvas');
-
-        const ctx =
-          canvas.getContext('2d');
-
-        let width = img.width;
-        let height = img.height;
-
-        const maxSize = 2000;
-
-        if(width > maxSize || height > maxSize){
-
-          if(width > height){
-
-            height =
-              height * (maxSize / width);
-
-            width = maxSize;
-
-          }else{
-
-            width =
-              width * (maxSize / height);
-
-            height = maxSize;
-
-          }
-
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          width,
-          height
-        );
-
-        canvas.toBlob((blob) => {
-
-          if(!blob){
-            reject('Compression failed');
-            return;
-          }
-
-          resolve(blob);
-
-        },format,quality);
-
-      }catch(err){
-
-        reject(err);
-
-      }
-
-    };
-
-    img.onerror = reject;
-
-    reader.readAsDataURL(file);
-
-  });
-
-}
-
-function downloadFile(url,fileName){
-
-  const a = document.createElement('a');
-
-  a.href = url;
-  a.download = fileName;
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  document.body.removeChild(a);
-
-}
-
-downloadAllBtn.addEventListener('click', async () => {
-
-  if(compressedFiles.length === 0){
-
-    alert('No compressed files');
-
-    return;
-
-  }
-
-  for(let i=0;i<compressedFiles.length;i++){
-
-    const file = compressedFiles[i];
-
-    const url =
-      URL.createObjectURL(file.blob);
-
-    downloadFile(url,file.name);
-
-    await delay(400);
-
-    URL.revokeObjectURL(url);
-
-  }
-
-});
-
-function delay(ms){
+function compress(file,quality,format){
 
   return new Promise(resolve => {
-    setTimeout(resolve,ms);
+
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = e => img.src = e.target.result;
+
+    img.onload = () => {
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      let w = img.width;
+      let h = img.height;
+
+      const max = 2000;
+
+      if(w>max || h>max){
+        if(w>h){
+          h = h*(max/w);
+          w = max;
+        } else {
+          w = w*(max/h);
+          h = max;
+        }
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+
+      ctx.drawImage(img,0,0,w,h);
+
+      canvas.toBlob(blob => resolve(blob),format,quality);
+
+    };
+
+    reader.readAsDataURL(file);
+
   });
 
 }
+
+/* DOWNLOAD */
+function download(url,name){
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+
+}
+
+/* DOWNLOAD ALL */
+downloadAllBtn.onclick = () => {
+
+  results.forEach((f,i) => {
+
+    const url = URL.createObjectURL(f.blob);
+
+    setTimeout(() => {
+      download(url,f.name);
+    },i*300);
+
+  });
+
+};
 
 </script>
 
 </body>
-      </html>
+  </html>
