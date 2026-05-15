@@ -280,9 +280,17 @@ qualitySlider.addEventListener('input', () => {
 });
 
 imageInput.addEventListener('change', (e) => {
-  uploadedFiles = Array.from(e.target.files);
+
+  const newFiles = Array.from(e.target.files);
+
+  uploadedFiles = [...uploadedFiles, ...newFiles];
+
   compressedFiles = [];
+
   renderOriginalPreview();
+
+  imageInput.value = '';
+
 });
 
 function formatBytes(bytes){
